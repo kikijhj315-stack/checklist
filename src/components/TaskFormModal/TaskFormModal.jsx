@@ -94,7 +94,8 @@ const TaskFormModal = ({ isOpen, onClose, groupId }) => {
       assignees: selectedAssignees.map(userId => ({ userId, checked: false }))
     };
 
-    await addTask(newTask);
+    // Firebase 통신 완료를 기다리지 않고 즉시 창을 닫아 사용자 경험을 개선 (Optimistic UI)
+    addTask(newTask);
     
     // Reset form and close
     setUploading(false);
@@ -103,7 +104,6 @@ const TaskFormModal = ({ isOpen, onClose, groupId }) => {
     setAttachment(null);
     setDueDate(null);
     setSelectedAssignees([]);
-    // Reset file input visually if needed (handled by uncontrolled input nature, but just in case, we could use a ref, but simple is fine here)
     onClose();
   };
 
