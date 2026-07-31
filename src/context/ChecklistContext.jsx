@@ -59,7 +59,7 @@ export const ChecklistProvider = ({ children }) => {
     }
   };
 
-  const toggleAssigneeCheck = async (taskId, userId) => {
+  const toggleAssigneeCheck = async (taskId, userId, submittedUrl = null) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
     
@@ -68,7 +68,7 @@ export const ChecklistProvider = ({ children }) => {
       if (a.userId === userId) {
         const newChecked = !a.checked;
         if (!newChecked) allChecked = false;
-        return { ...a, checked: newChecked };
+        return { ...a, checked: newChecked, submittedUrl: newChecked ? submittedUrl : null };
       }
       if (!a.checked) allChecked = false;
       return a;

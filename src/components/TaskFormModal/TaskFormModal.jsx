@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useChecklist } from '../../context/ChecklistContext';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../../utils/firebase';
 import './TaskFormModal.css';
 
 const TaskFormModal = ({ isOpen, onClose, groupId }) => {
@@ -13,6 +15,7 @@ const TaskFormModal = ({ isOpen, onClose, groupId }) => {
   const [attachment, setAttachment] = useState(null);
   const [dueDate, setDueDate] = useState(null);
   const [selectedAssignees, setSelectedAssignees] = useState([]);
+  const [uploading, setUploading] = useState(false);
 
   if (!isOpen) return null;
 
@@ -37,27 +40,40 @@ const TaskFormModal = ({ isOpen, onClose, groupId }) => {
       return;
     }
     
-    // Limit to 1MB due to localStorage constraints
-    if (file.size > 1024 * 1024) {
-      alert("파일 크기가 너무 큽니다. 임시 저장소(Local Storage) 제한으로 최대 1MB까지만 첨부할 수 있습니다.");
+    // We can allow larger files now, e.g. 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      alert("파일 크기가 너무 큽니다. 최대 5MB까지만 첨부할 수 있습니다.");
       e.target.value = '';
       setAttachment(null);
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAttachment({
-        name: file.name,
-        dataURL: reader.result
-      });
-    };
-    reader.readAsDataURL(file);
+    setAttachment(file);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || uploading) return;
+
+    setUploading(true);
+    let attachmentData = null;
+
+    if (attachment) {
+      try {
+        const fileRef = ref(storage, `attachments/${Date.now()}_${attachment.name}`);
+        const snapshot = await uploadBytes(fileRef, attachment);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        attachmentData = {
+          name: attachment.name,
+          dataURL: downloadURL
+        };
+      } catch (error) {
+        console.error("File upload failed", error);
+        alert("파일 업로드에 실패했습니다. Firebase Storage 규칙(Rules)이 허용(allow read, write: if true;)되어 있는지 확인해주세요.");
+        setUploading(false);
+        return;
+      }
+    }
 
     // Determine max order in current group
     const groupTasks = tasks.filter(t => t.groupId === groupId);
@@ -69,7 +85,7 @@ const TaskFormModal = ({ isOpen, onClose, groupId }) => {
       order: maxOrder + 1,
       title: title.trim(),
       description: description.trim(),
-      attachment: attachment, // Now an object { name, dataURL } or null
+      attachment: attachmentData,
       publisherId: currentUser.id,
       createdAt: new Date().toISOString(),
       dueDate: dueDate ? dueDate.toISOString() : null,
@@ -78,9 +94,10 @@ const TaskFormModal = ({ isOpen, onClose, groupId }) => {
       assignees: selectedAssignees.map(userId => ({ userId, checked: false }))
     };
 
-    addTask(newTask);
+    await addTask(newTask);
     
     // Reset form and close
+    setUploading(false);
     setTitle('');
     setDescription('');
     setAttachment(null);
@@ -179,8 +196,10 @@ const TaskFormModal = ({ isOpen, onClose, groupId }) => {
           </div>
 
           <div className="modal-actions">
-            <button type="button" className="btn-cancel" onClick={onClose}>취소</button>
-            <button type="submit" className="btn-submit">등록하기</button>
+            <button type="button" className="btn-cancel" onClick={onClose} disabled={uploading}>취소</button>
+            <button type="submit" className="btn-submit" disabled={uploading}>
+              {uploading ? <Loader2 size={16} className="spinner" /> : '등록하기'}
+            </button>
           </div>
         </form>
       </div>

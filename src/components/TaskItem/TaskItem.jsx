@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useChecklist } from '../../context/ChecklistContext';
 import { Draggable } from '@hello-pangea/dnd';
 import { format, isPast, parseISO } from 'date-fns';
-import { GripVertical, Calendar, CheckCircle2, Circle, Paperclip, User, Trash2 } from 'lucide-react';
+import { GripVertical, Calendar, CheckCircle2, Circle, Paperclip, User, Trash2, X } from 'lucide-react';
 import './TaskItem.css';
 
 const TaskItem = ({ task, index }) => {
   const { toggleAssigneeCheck, markTaskCompleted, currentUser, users, deleteTask } = useChecklist();
   const isAdmin = currentUser.role === 'admin';
   const canDelete = isAdmin || currentUser.id === task.publisherId;
+
+  const [checkModal, setCheckModal] = useState({ isOpen: false, userId: null, url: '' });
 
   const completedAssignees = task.assignees.filter(a => a.checked);
   const pendingAssignees = task.assignees.filter(a => !a.checked);
@@ -20,12 +22,24 @@ const TaskItem = ({ task, index }) => {
   const isOverdue = task.dueDate && isPast(parseISO(task.dueDate)) && task.status !== 'Completed';
 
   const handleToggleAssignee = (userId) => {
-    // Permission check: only admin or the specific assignee can check their own box
     if (isAdmin || currentUser.id === userId) {
-      toggleAssigneeCheck(task.id, userId);
+      const assignee = task.assignees.find(a => a.userId === userId);
+      if (!assignee.checked) {
+        // Open modal to get URL before checking
+        setCheckModal({ isOpen: true, userId, url: '' });
+      } else {
+        // Uncheck directly
+        toggleAssigneeCheck(task.id, userId);
+      }
     } else {
-      alert("You only have permission to check your own assignments.");
+      alert("본인의 업무만 체크할 수 있습니다.");
     }
+  };
+
+  const handleConfirmCheck = (e) => {
+    e.preventDefault();
+    toggleAssigneeCheck(task.id, checkModal.userId, checkModal.url.trim());
+    setCheckModal({ isOpen: false, userId: null, url: '' });
   };
 
   const handleToggleAll = () => {
@@ -76,14 +90,14 @@ const TaskItem = ({ task, index }) => {
                 
                 <div className="task-meta">
                   <span className="meta-item">
-                    <span className="meta-label">Created:</span>
-                    {format(parseISO(task.createdAt), 'MMM d, yyyy')}
+                    <span className="meta-label">등록날짜:</span>
+                    {format(parseISO(task.createdAt), 'yyyy.MM.dd')}
                   </span>
                   
                   {task.publisherId && (
                     <span className="meta-item">
                       <User size={12} />
-                      <span className="meta-label">By:</span>
+                      <span className="meta-label">게시자:</span>
                       {users.find(u => u.id === task.publisherId)?.name || 'Unknown'}
                     </span>
                   )}
@@ -103,16 +117,16 @@ const TaskItem = ({ task, index }) => {
                   {task.dueDate && (
                     <span className={`meta-item ${isOverdue ? 'overdue' : ''}`}>
                       <Calendar size={12} />
-                      <span className="meta-label">Due:</span>
-                      {format(parseISO(task.dueDate), 'MMM d, yyyy')}
+                      <span className="meta-label">완료기안일:</span>
+                      {format(parseISO(task.dueDate), 'yyyy.MM.dd HH:mm')}
                     </span>
                   )}
 
                   {task.completedAt && (
                     <span className="meta-item completed-date">
                       <CheckCircle2 size={12} />
-                      <span className="meta-label">Done:</span>
-                      {format(parseISO(task.completedAt), 'MMM d, yyyy h:mm a')}
+                      <span className="meta-label">완료날짜:</span>
+                      {format(parseISO(task.completedAt), 'yyyy.MM.dd HH:mm')}
                     </span>
                   )}
                 </div>
@@ -137,7 +151,20 @@ const TaskItem = ({ task, index }) => {
                       <span className="status-label completed">완료:</span>
                       <span className="status-names">
                         {completedAssignees.length > 0 
-                          ? completedAssignees.map(a => users.find(u => u.id === a.userId)?.name).join(', ') 
+                          ? completedAssignees.map((a, i) => {
+                              const uName = users.find(u => u.id === a.userId)?.name;
+                              return (
+                                <React.Fragment key={a.userId}>
+                                  {uName}
+                                  {a.submittedUrl && (
+                                    <a href={a.submittedUrl.startsWith('http') ? a.submittedUrl : `https://${a.submittedUrl}`} target="_blank" rel="noreferrer" className="submitted-link" title={a.submittedUrl}>
+                                      [링크]
+                                    </a>
+                                  )}
+                                  {i < completedAssignees.length - 1 ? ', ' : ''}
+                                </React.Fragment>
+                              );
+                            })
                           : '-'}
                       </span>
                     </div>
@@ -180,6 +207,35 @@ const TaskItem = ({ task, index }) => {
               </div>
             </div>
           </div>
+
+          {/* URL Input Modal */}
+          {checkModal.isOpen && (
+            <div className="url-modal-overlay">
+              <div className="url-modal-content">
+                <div className="url-modal-header">
+                  <h4>완료 처리</h4>
+                  <button className="url-modal-close" onClick={() => setCheckModal({ isOpen: false, userId: null, url: '' })}>
+                    <X size={18} />
+                  </button>
+                </div>
+                <form onSubmit={handleConfirmCheck}>
+                  <p className="url-modal-desc">해당 업무의 판매페이지 URL을 입력해주세요.</p>
+                  <input 
+                    type="url" 
+                    className="url-modal-input" 
+                    placeholder="https://..." 
+                    value={checkModal.url}
+                    onChange={(e) => setCheckModal({ ...checkModal, url: e.target.value })}
+                    autoFocus
+                  />
+                  <div className="url-modal-actions">
+                    <button type="submit" className="btn-confirm">확인</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
         </div>
       )}
     </Draggable>
