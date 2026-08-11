@@ -29,6 +29,17 @@ export const ChecklistProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
+  // Ping SQLite backend for access logging
+  useEffect(() => {
+    if (currentUser) {
+      fetch('http://localhost:3000/api/access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUser.id, username: currentUser.name })
+      }).catch(err => console.error("Access log server not reachable", err));
+    }
+  }, [currentUser]);
+
   const addTask = async (newTask) => {
     try {
       await setDoc(doc(db, 'tasks', newTask.id), newTask);
