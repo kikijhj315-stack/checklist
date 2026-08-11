@@ -5,10 +5,17 @@ export const mockGroups = [
 ];
 
 export const mockUsers = [
-  { id: 'u1', name: '김철수', role: 'admin' }, // admin can edit everything
-  { id: 'u2', name: '이영희', role: 'user' },
-  { id: 'u3', name: '박지성', role: 'user' },
-  { id: 'u4', name: '최동석', role: 'user' },
+  { id: 'u1', name: '주홍준', role: 'admin' },
+  { id: 'u2', name: '고미란', role: 'user' },
+  { id: 'u3', name: '탁성미', role: 'user' },
+  { id: 'u4', name: '장현정', role: 'user' },
+  { id: 'u5', name: '허우연', role: 'user' },
+  { id: 'u6', name: '연지영', role: 'user' },
+  { id: 'u7', name: '김송이', role: 'user' },
+  { id: 'u8', name: '이단비', role: 'user' },
+  { id: 'u9', name: '이재임', role: 'user' },
+  { id: 'u10', name: '한정민', role: 'user' },
+  { id: 'u11', name: '최준식', role: 'user' },
 ];
 
 export const mockTasks = [
