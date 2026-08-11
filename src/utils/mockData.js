@@ -5,17 +5,17 @@ export const mockGroups = [
 ];
 
 export const mockUsers = [
-  { id: 'u1', name: '주홍준', role: 'admin' },
-  { id: 'u2', name: '고미란', role: 'user' },
-  { id: 'u3', name: '탁성미', role: 'user' },
-  { id: 'u4', name: '장현정', role: 'user' },
-  { id: 'u5', name: '허우연', role: 'user' },
-  { id: 'u6', name: '연지영', role: 'user' },
-  { id: 'u7', name: '김송이', role: 'user' },
-  { id: 'u8', name: '이단비', role: 'user' },
-  { id: 'u9', name: '이재임', role: 'user' },
-  { id: 'u10', name: '한정민', role: 'user' },
-  { id: 'u11', name: '최준식', role: 'user' },
+  { id: '주홍준', pw: 'a1', name: '주홍준', role: 'admin1' }, // admin can edit everything
+  { id: '고미란', pw: 'a1', name: '고미란', role: 'admin2' }, // admin can edit everything
+  { id: '탁성미', pw: 'a1', name: '탁성미', role: 'admin3' }, // admin can edit everything
+  { id: '장현정', pw: 'a1', name: '장현정', role: 'admin4' }, // admin can edit everything
+  { id: '허우연', pw: 'a1', name: '허우연', role: 'user1' },
+  { id: '연지영', pw: 'a1', name: '연지영', role: 'user2' },
+  { id: '김송이', pw: 'a1', name: '김송이', role: 'user3' },
+  { id: '이단비', pw: 'a1', name: '이단비', role: 'user5' },
+  { id: '이재임', pw: 'a1', name: '이재임', role: 'user6' },
+  { id: '한정민', pw: 'a1', name: '한정민', role: 'user7' },
+  { id: '최준식', pw: 'a1', name: '최준식', role: 'user8' },
 ];
 
 export const mockTasks = [

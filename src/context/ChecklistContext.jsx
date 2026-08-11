@@ -9,11 +9,30 @@ export const useChecklist = () => useContext(ChecklistContext);
 
 export const ChecklistProvider = ({ children }) => {
   const [groups] = useState(mockGroups);
-  const [users] = useState(mockUsers);
-  const [currentUser, setCurrentUser] = useState(mockUsers[0]);
+  const [dbUsers, setDbUsers] = useState([]);
+  const [users, setUsers] = useState(mockUsers);
+  const [currentUser, setCurrentUser] = useState(null); // Start with no user logged in
   
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Sync users_auth for password changes
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'users_auth'), (snapshot) => {
+      const authData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setDbUsers(authData);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Merge dbUsers with mockUsers to get the latest passwords
+  useEffect(() => {
+    const merged = mockUsers.map(mu => {
+      const dbUser = dbUsers.find(du => du.id === mu.id);
+      return dbUser ? { ...mu, pw: dbUser.pw } : mu;
+    });
+    setUsers(merged);
+  }, [dbUsers]);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'tasks'), (snapshot) => {
@@ -122,10 +141,7 @@ export const ChecklistProvider = ({ children }) => {
     }
   };
 
-  const changeCurrentUser = (userId) => {
-    const user = users.find(u => u.id === userId);
-    if (user) setCurrentUser(user);
-  };
+  // setCurrentUser is now exported directly
 
   const value = {
     groups,
@@ -138,7 +154,7 @@ export const ChecklistProvider = ({ children }) => {
     updateTaskOrder,
     toggleAssigneeCheck,
     markTaskCompleted,
-    changeCurrentUser
+    setCurrentUser
   };
 
   return (
